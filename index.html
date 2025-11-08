@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payfinimo</title>
+   
+    
+    <style>
+        /* Define Brand Colors */
+        :root {
+            --color-dark-bg: #0B0C10;
+            --color-accent: #00F5D4; /* Electric Teal */
+            --color-secondary: #8B5CF6; /* Purple */
+        }
+        body {
+            /* Apply dark background and Inter font */
+            font-family: 'Inter', sans-serif;
+            background-color: var(--color-dark-bg);
+            color: #E5E7EB;
+            min-height: 100vh;
+            /* Center the content vertically and horizontally */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0;
+            padding: 20px;
+            text-align: center;
+        }
+
+        /* Gradient for the text, using brand colors */
+        .text-gradient {
+            background: linear-gradient(45deg, var(--color-secondary), var(--color-accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        /* Animated background glow from the modern template */
+        .hero-glow {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 80vw;
+            height: 80vh;
+            background: radial-gradient(circle at center, rgba(0, 245, 212, 0.1), transparent 50%);
+            pointer-events: none;
+            z-index: 0;
+        }
+    </style>
+</head>
+<body>
+    <!-- Animated Background Glow -->
+    <div class="hero-glow"></div>
+
+    <!-- Brand Name (Large, centered, and using the gradient style) -->
+    <h1 class="relative z-10 text-7xl sm:text-8xl lg:text-9xl font-black">
+        <span class="text-gradient">Payfinimo</span>
+    </h1>
+</body>
+</html>
