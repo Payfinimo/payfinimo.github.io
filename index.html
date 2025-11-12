@@ -3,64 +3,2423 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Payfinimo</title>
-   
-    
+    <title>Indriya - HealthMart Payment Analytics Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
     <style>
-        /* Define Brand Colors */
-        :root {
-            --color-dark-bg: #0B0C10;
-            --color-accent: #00F5D4; /* Electric Teal */
-            --color-secondary: #8B5CF6; /* Purple */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
+
+        :root {
+            /* Default - Indigo Theme */
+            --primary: #6366f1;
+            --secondary: #8b5cf6;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --dark-bg: #0f172a;
+            --dark-card: #1e293b;
+            --dark-border: #334155;
+            --dark-text: #f1f5f9;
+            --light-bg: #f8fafc;
+            --light-card: #ffffff;
+            --light-border: #e2e8f0;
+            --light-text: #1e293b;
+        }
+
+        /* Theme: Ocean Blue */
+        body.theme-ocean {
+            --primary: #0ea5e9;
+            --secondary: #06b6d4;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+        }
+
+        /* Theme: Forest Green */
+        body.theme-forest {
+            --primary: #059669;
+            --secondary: #10b981;
+            --success: #34d399;
+            --warning: #fbbf24;
+            --danger: #f87171;
+        }
+
+        /* Theme: Rose Pink */
+        body.theme-rose {
+            --primary: #ec4899;
+            --secondary: #f472b6;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+        }
+
+        /* Theme: Amber Gold */
+        body.theme-amber {
+            --primary: #d97706;
+            --secondary: #f59e0b;
+            --success: #10b981;
+            --warning: #fbbf24;
+            --danger: #ef4444;
+        }
+
+        /* Theme: Purple Royale */
+        body.theme-purple {
+            --primary: #a855f7;
+            --secondary: #d946ef;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+        }
+
         body {
-            /* Apply dark background and Inter font */
-            font-family: 'Inter', sans-serif;
-            background-color: var(--color-dark-bg);
-            color: #E5E7EB;
-            min-height: 100vh;
-            /* Center the content vertically and horizontally */
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--light-bg);
+            color: var(--light-text);
+            transition: all 0.3s ease;
+        }
+
+        body.dark-mode {
+            background-color: var(--dark-bg);
+            color: var(--dark-text);
+        }
+
+        /* Header */
+        .header {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            color: white;
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .logo {
+            width: 45px;
+            height: 45px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
             display: flex;
             align-items: center;
             justify-content: center;
-            margin: 0;
+            font-weight: bold;
+            font-size: 24px;
+        }
+
+        .header-title h1 {
+            font-size: 26px;
+            font-weight: 700;
+        }
+
+        .header-title p {
+            font-size: 12px;
+            opacity: 0.9;
+        }
+
+        .header-controls {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .toggle-group {
+            display: flex;
+            gap: 8px;
+            background: rgba(255, 255, 255, 0.2);
+            padding: 5px;
+            border-radius: 8px;
+        }
+
+        .toggle-btn {
+            background: transparent;
+            color: white;
+            border: none;
+            padding: 8px 14px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            font-size: 12px;
+            transition: all 0.3s;
+        }
+
+        .toggle-btn.active {
+            background: rgba(255, 255, 255, 0.3);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .mode-toggle, .settings-toggle {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 18px;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .mode-toggle:hover, .settings-toggle:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: scale(1.05);
+        }
+
+        /* Settings Modal */
+        .settings-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            z-index: 1000;
+            animation: fadeIn 0.3s;
+        }
+
+        .settings-modal.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .settings-content {
+            background: var(--light-card);
+            border-radius: 12px;
+            padding: 30px;
+            max-width: 500px;
+            width: 90%;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        body.dark-mode .settings-content {
+            background: var(--dark-card);
+        }
+
+        .settings-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+        }
+
+        .settings-header h2 {
+            font-size: 22px;
+            color: var(--light-text);
+        }
+
+        body.dark-mode .settings-header h2 {
+            color: var(--dark-text);
+        }
+
+        .settings-close {
+            background: none;
+            border: none;
+            font-size: 28px;
+            cursor: pointer;
+            color: var(--light-text);
+        }
+
+        body.dark-mode .settings-close {
+            color: var(--dark-text);
+        }
+
+        .settings-section {
+            margin-bottom: 25px;
+        }
+
+        .settings-label {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--primary);
+            margin-bottom: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .color-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+        }
+
+        .color-option {
+            padding: 15px;
+            border-radius: 10px;
+            cursor: pointer;
+            border: 3px solid transparent;
+            transition: all 0.3s;
+            text-align: center;
+            font-weight: 600;
+            font-size: 13px;
+            color: white;
+        }
+
+        .color-option:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .color-option.active {
+            border-color: white;
+            box-shadow: 0 0 0 2px white, 0 0 0 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .color-indigo {
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+        }
+
+        .color-ocean {
+            background: linear-gradient(135deg, #0ea5e9 0%, #06b6d4 100%);
+        }
+
+        .color-forest {
+            background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+        }
+
+        .color-rose {
+            background: linear-gradient(135deg, #ec4899 0%, #f472b6 100%);
+        }
+
+        .color-amber {
+            background: linear-gradient(135deg, #d97706 0%, #f59e0b 100%);
+        }
+
+        .color-purple {
+            background: linear-gradient(135deg, #a855f7 0%, #d946ef 100%);
+        }
+
+        /* Main Container */
+        .container {
+            display: flex;
+            height: calc(100vh - 80px);
+            gap: 20px;
+            padding: 20px;
+        }
+
+        /* Dashboard Section */
+        .dashboard {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+            gap: 20px;
+            min-width: 0;
+        }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            gap: 10px;
+            border-bottom: 2px solid var(--light-border);
+            background: var(--light-card);
+            padding: 15px 20px;
+            border-radius: 10px;
+            flex-wrap: wrap;
+            position: sticky;
+            top: 0;
+            z-index: 50;
+        }
+
+        body.dark-mode .tabs {
+            background: var(--dark-card);
+            border-color: var(--dark-border);
+        }
+
+        .tab {
+            background: transparent;
+            border: none;
+            color: var(--light-text);
+            padding: 10px 16px;
+            cursor: pointer;
+            font-weight: 500;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s;
+            font-size: 13px;
+            white-space: nowrap;
+        }
+
+        body.dark-mode .tab {
+            color: var(--dark-text);
+        }
+
+        .tab:hover {
+            color: var(--primary);
+        }
+
+        .tab.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+        }
+
+        /* Tab Content */
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.3s;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        /* Grid Layout */
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+        }
+
+        .grid-2 {
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+        }
+
+        .grid-full {
+            grid-template-columns: 1fr;
+        }
+
+        /* Card Styles */
+        .card {
+            background: var(--light-card);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s;
+            border: 1px solid var(--light-border);
+        }
+
+        body.dark-mode .card {
+            background: var(--dark-card);
+            border-color: var(--dark-border);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        .card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: 15px;
+        }
+
+        .card-title {
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--light-text);
+        }
+
+        body.dark-mode .card-title {
+            color: var(--dark-text);
+        }
+
+        .card-icon {
+            width: 35px;
+            height: 35px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+        }
+
+        .metric {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--primary);
+            margin: 10px 0;
+        }
+
+        .metric-subtext {
+            font-size: 12px;
+            color: #999;
+            margin-top: 5px;
+        }
+
+        /* Trend Indicators */
+        .trend {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 12px;
+            padding: 4px 8px;
+            border-radius: 4px;
+            margin-top: 8px;
+        }
+
+        .trend.positive {
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--success);
+        }
+
+        .trend.negative {
+            background: rgba(239, 68, 68, 0.1);
+            color: var(--danger);
+        }
+
+        /* Chatbot Panel */
+        .chatbot-panel {
+            width: 450px;
+            background: var(--light-card);
+            border-radius: 12px;
+            box-shadow: 0 2px 15px rgba(0, 0, 0, 0.08);
+            display: flex;
+            flex-direction: column;
+            border: 1px solid var(--light-border);
+            overflow: hidden;
+            transition: all 0.3s;
+        }
+
+        body.dark-mode .chatbot-panel {
+            background: var(--dark-card);
+            border-color: var(--dark-border);
+            box-shadow: 0 2px 15px rgba(0, 0, 0, 0.4);
+        }
+
+        .chatbot-header {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            color: white;
             padding: 20px;
             text-align: center;
         }
 
-        /* Gradient for the text, using brand colors */
-        .text-gradient {
-            background: linear-gradient(45deg, var(--color-secondary), var(--color-accent));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
+        .chatbot-header h3 {
+            font-size: 18px;
+            margin-bottom: 5px;
+            font-weight: 700;
         }
 
-        /* Animated background glow from the modern template */
-        .hero-glow {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 80vw;
-            height: 80vh;
-            background: radial-gradient(circle at center, rgba(0, 245, 212, 0.1), transparent 50%);
-            pointer-events: none;
-            z-index: 0;
+        .chatbot-header p {
+            font-size: 12px;
+            opacity: 0.9;
+        }
+
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            min-height: 300px;
+        }
+
+        .message {
+            display: flex;
+            gap: 10px;
+            animation: slideIn 0.3s;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .bot-message .msg-content {
+            background: var(--primary);
+            color: white;
+            padding: 12px 15px;
+            border-radius: 12px;
+            border-bottom-left-radius: 4px;
+            max-width: 85%;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
+        .user-message {
+            justify-content: flex-end;
+        }
+
+        .user-message .msg-content {
+            background: #e0e7ff;
+            color: var(--light-text);
+            padding: 12px 15px;
+            border-radius: 12px;
+            border-bottom-right-radius: 4px;
+            max-width: 85%;
+            font-size: 13px;
+        }
+
+        body.dark-mode .user-message .msg-content {
+            background: #3730a3;
+            color: #e0e7ff;
+        }
+
+        .questions-section {
+            padding: 15px;
+            border-top: 1px solid var(--light-border);
+            max-height: 180px;
+            overflow-y: auto;
+        }
+
+        body.dark-mode .questions-section {
+            border-color: var(--dark-border);
+        }
+
+        .questions-title {
+            font-size: 11px;
+            font-weight: 700;
+            color: #999;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .question-btn {
+            display: block;
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 8px;
+            background: var(--light-bg);
+            border: 1px solid var(--light-border);
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 12px;
+            text-align: left;
+            transition: all 0.3s;
+            color: var(--light-text);
+        }
+
+        body.dark-mode .question-btn {
+            background: #1e293b;
+            border-color: var(--dark-border);
+            color: var(--dark-text);
+        }
+
+        .question-btn:hover {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+            transform: translateX(5px);
+        }
+
+        /* Chart Container */
+        .chart-container {
+            position: relative;
+            height: 280px;
+            margin: 15px 0;
+        }
+
+        /* Table Styles */
+        .table-responsive {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+        }
+
+        thead {
+            background: var(--light-bg);
+        }
+
+        body.dark-mode thead {
+            background: #1e293b;
+        }
+
+        th {
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+            color: var(--light-text);
+            border-bottom: 2px solid var(--light-border);
+        }
+
+        body.dark-mode th {
+            color: var(--dark-text);
+            border-color: var(--dark-border);
+        }
+
+        td {
+            padding: 10px 12px;
+            border-bottom: 1px solid var(--light-border);
+        }
+
+        body.dark-mode td {
+            border-color: var(--dark-border);
+        }
+
+        tr:hover {
+            background: var(--light-bg);
+        }
+
+        body.dark-mode tr:hover {
+            background: #1e293b;
+        }
+
+        /* Status Badge */
+        .badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 10px;
+            font-weight: 600;
+        }
+
+        .badge-success {
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--success);
+        }
+
+        .badge-warning {
+            background: rgba(245, 158, 11, 0.1);
+            color: var(--warning);
+        }
+
+        .badge-danger {
+            background: rgba(239, 68, 68, 0.1);
+            color: var(--danger);
+        }
+
+        .badge-info {
+            background: rgba(99, 102, 241, 0.1);
+            color: var(--primary);
+        }
+
+        /* Responsive */
+        @media (max-width: 1400px) {
+            .chatbot-panel {
+                width: 400px;
+            }
+
+            .grid-2 {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 1024px) {
+            .container {
+                flex-direction: column;
+            }
+
+            .chatbot-panel {
+                width: 100%;
+                max-height: 450px;
+            }
+
+            .header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .header-controls {
+                width: 100%;
+                justify-content: space-between;
+            }
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+
+        body.dark-mode ::-webkit-scrollbar-thumb {
+            background: #475569;
+        }
+
+        /* Category Tabs in Chatbot */
+        .category-tabs {
+            display: flex;
+            gap: 6px;
+            margin-bottom: 12px;
+            overflow-x: auto;
+            padding: 0 15px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--light-border);
+        }
+
+        body.dark-mode .category-tabs {
+            border-color: var(--dark-border);
+        }
+
+        .category-tab {
+            background: var(--light-bg);
+            border: 1px solid var(--light-border);
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 11px;
+            font-weight: 600;
+            white-space: nowrap;
+            transition: all 0.3s;
+            color: var(--light-text);
+        }
+
+        body.dark-mode .category-tab {
+            background: #1e293b;
+            border-color: var(--dark-border);
+            color: var(--dark-text);
+        }
+
+        .category-tab.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        /* Input Field */
+        .chat-input {
+            padding: 15px;
+            border-top: 1px solid var(--light-border);
+            display: flex;
+            gap: 10px;
+        }
+
+        body.dark-mode .chat-input {
+            border-color: var(--dark-border);
+        }
+
+        .chat-input input {
+            flex: 1;
+            padding: 10px 15px;
+            border: 1px solid var(--light-border);
+            border-radius: 8px;
+            font-size: 13px;
+            background: var(--light-bg);
+            color: var(--light-text);
+        }
+
+        body.dark-mode .chat-input input {
+            background: #1e293b;
+            border-color: var(--dark-border);
+            color: var(--dark-text);
+        }
+
+        .chat-input input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+        }
+
+        .chat-input button {
+            background: var(--primary);
+            color: white;
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+        }
+
+        .chat-input button:hover {
+            background: var(--secondary);
+            transform: scale(1.05);
+        }
+
+        /* Loading Animation */
+        .loading {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: white;
+            margin: 0 2px;
+            animation: loading 1.4s infinite;
+        }
+
+        .loading:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .loading:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        @keyframes loading {
+            0%, 80%, 100% {
+                opacity: 0.3;
+            }
+            40% {
+                opacity: 1;
+            }
+        }
+
+        /* Summary Stats */
+        .summary-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+            gap: 12px;
+            margin: 15px 0;
+        }
+
+        .stat-item {
+            background: var(--light-bg);
+            padding: 12px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        body.dark-mode .stat-item {
+            background: #1e293b;
+        }
+
+        .stat-value {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .stat-label {
+            font-size: 11px;
+            color: #999;
+            margin-top: 5px;
         }
     </style>
 </head>
 <body>
-    <!-- Animated Background Glow -->
-    <div class="hero-glow"></div>
-      <h1 class="relative z-10 text-7xl sm:text-8xl lg:text-9xl font-black">
-        <span class="text-gradient">Payfinimo</span>
-    </h1>
-     <br>
-    <br>
-<img src="https://payfinimo.github.io/Payfinimo%20banner.png" alt="Description of the image">
-    <br>
-    <br>
-    <!-- Brand Name (Large, centered, and using the gradient style) -->
-  
+    <!-- Header -->
+    <div class="header">
+        <div class="header-left">
+            <div class="logo">💳</div>
+            <div class="header-title">
+                <h1>Indriya</h1>
+                <p>HealthMart Payment Analytics</p>
+            </div>
+        </div>
+
+        <div class="header-controls">
+            <div class="toggle-group">
+                <button class="toggle-btn active" id="viewToggle" data-view="merchant">Merchant View</button>
+                <button class="toggle-btn" id="salesToggle" data-view="sales">Sales View</button>
+            </div>
+
+            <div class="toggle-group">
+                <button class="toggle-btn active" id="periodToday" data-period="today">Today</button>
+                <button class="toggle-btn" id="periodOverall" data-period="overall">Overall</button>
+            </div>
+
+            <button class="mode-toggle" id="themeToggle" title="Toggle Dark/Light Mode">🌙</button>
+            <button class="settings-toggle" id="settingsToggle" title="Settings">⚙️</button>
+        </div>
+    </div>
+
+    <!-- Settings Modal -->
+    <div class="settings-modal" id="settingsModal">
+        <div class="settings-content">
+            <div class="settings-header">
+                <h2>Settings & Customization</h2>
+                <button class="settings-close" id="settingsClose">&times;</button>
+            </div>
+
+            <div class="settings-section">
+                <div class="settings-label">Choose Color Theme</div>
+                <div class="color-grid">
+                    <button class="color-option color-indigo active" data-theme="default" title="Indigo">
+                        Default
+                    </button>
+                    <button class="color-option color-ocean" data-theme="ocean" title="Ocean Blue">
+                        Ocean
+                    </button>
+                    <button class="color-option color-forest" data-theme="forest" title="Forest Green">
+                        Forest
+                    </button>
+                    <button class="color-option color-rose" data-theme="rose" title="Rose Pink">
+                        Rose
+                    </button>
+                    <button class="color-option color-amber" data-theme="amber" title="Amber Gold">
+                        Amber
+                    </button>
+                    <button class="color-option color-purple" data-theme="purple" title="Purple Royale">
+                        Purple
+                    </button>
+                </div>
+            </div>
+
+            <div class="settings-section">
+                <div class="settings-label">Display Options</div>
+                <div style="display: flex; flex-direction: column; gap: 10px;">
+                    <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-size: 14px;">
+                        <input type="checkbox" id="darkModeToggle" style="width: 18px; height: 18px; cursor: pointer;">
+                        <span>Dark Mode</span>
+                    </label>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Container -->
+    <div class="container">
+        <!-- Dashboard -->
+        <div class="dashboard">
+            <!-- Tabs -->
+            <div class="tabs" id="tabsContainer">
+                <button class="tab active" data-tab="overview">📊 Overview</button>
+                <button class="tab" data-tab="payment-modes">💳 Payment Modes</button>
+                <button class="tab" data-tab="performance">📈 Performance</button>
+                <button class="tab" data-tab="competition">🎯 Competition</button>
+                <button class="tab" data-tab="behavior">👥 Behavior</button>
+                <button class="tab" data-tab="security">🔒 Security</button>
+                <button class="tab" data-tab="operational">⚙️ Operational</button>
+                <button class="tab" data-tab="strategic">🚀 Strategic</button>
+            </div>
+
+            <!-- Overview Tab -->
+            <div class="tab-content active" id="overview">
+                <div class="grid">
+                    <!-- KPI Cards -->
+                    <div class="card">
+                        <div class="card-header">
+                            <div>
+                                <div class="card-title">Total Transactions</div>
+                                <div class="metric" id="totalTxn">2,845</div>
+                                <div class="metric-subtext">Processed successfully</div>
+                            </div>
+                            <div class="card-icon" style="background: rgba(99, 102, 241, 0.2); color: var(--primary);">📊</div>
+                        </div>
+                        <div class="trend positive">↑ 12.5% vs previous period</div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <div>
+                                <div class="card-title">Total Revenue</div>
+                                <div class="metric" id="totalRevenue">₹45.82L</div>
+                                <div class="metric-subtext">Net transaction value</div>
+                            </div>
+                            <div class="card-icon" style="background: rgba(16, 185, 129, 0.2); color: var(--success);">💰</div>
+                        </div>
+                        <div class="trend positive">↑ 8.3% vs previous period</div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <div>
+                                <div class="card-title">Avg Transaction Value</div>
+                                <div class="metric" id="avgValue">₹1,612</div>
+                                <div class="metric-subtext">Per transaction</div>
+                            </div>
+                            <div class="card-icon" style="background: rgba(245, 158, 11, 0.2); color: var(--warning);">💵</div>
+                        </div>
+                        <div class="trend negative">↓ 2.1% vs previous period</div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <div>
+                                <div class="card-title">Success Rate</div>
+                                <div class="metric" id="successRate">98.5%</div>
+                                <div class="metric-subtext">Transaction approval rate</div>
+                            </div>
+                            <div class="card-icon" style="background: rgba(16, 185, 129, 0.2); color: var(--success);">✓</div>
+                        </div>
+                        <div class="trend positive">↑ 0.8% vs previous period</div>
+                    </div>
+                </div>
+
+                <!-- Payment Mode Distribution -->
+                <div class="grid grid-2">
+                    <div class="card">
+                        <div class="card-title">Payment Mode Distribution</div>
+                        <div class="chart-container">
+                            <canvas id="paymentModeChart"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-title">Revenue by Payment Instrument</div>
+                        <div class="chart-container">
+                            <canvas id="instrumentChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Detailed Metrics -->
+                <div class="grid">
+                    <div class="card">
+                        <div class="card-title">Top Payment Methods</div>
+                        <div class="table-responsive">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Payment Method</th>
+                                        <th>Volume</th>
+                                        <th>Revenue</th>
+                                        <th>Adoption</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>Credit Card</td>
+                                        <td>1,245</td>
+                                        <td>₹23.5L</td>
+                                        <td><span class="badge badge-success">43.8%</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td>Debit Card</td>
+                                        <td>856</td>
+                                        <td>₹14.2L</td>
+                                        <td><span class="badge badge-success">30.1%</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td>UPI</td>
+                                        <td>512</td>
+                                        <td>₹6.8L</td>
+                                        <td><span class="badge badge-warning">18.0%</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td>Wallets</td>
+                                        <td>232</td>
+                                        <td>₹1.3L</td>
+                                        <td><span class="badge badge-info">8.1%</span></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Payment Modes Tab -->
+            <div class="tab-content" id="payment-modes">
+                <div class="grid grid-2">
+                    <div class="card">
+                        <div class="card-title">Daily Transaction Trend</div>
+                        <div class="chart-container">
+                            <canvas id="trendChart"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-title">Payment Network Performance</div>
+                        <div class="table-responsive">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Network</th>
+                                        <th>Success Rate</th>
+                                        <th>Avg Time</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>Visa</td>
+                                        <td>99.2%</td>
+                                        <td>1.2s</td>
+                                        <td><span class="badge badge-success">Excellent</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td>Mastercard</td>
+                                        <td>98.8%</td>
+                                        <td>1.4s</td>
+                                        <td><span class="badge badge-success">Excellent</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td>RuPay</td>
+                                        <td>97.5%</td>
+                                        <td>1.8s</td>
+                                        <td><span class="badge badge-warning">Good</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td>NPCI (UPI)</td>
+                                        <td>96.8%</td>
+                                        <td>2.1s</td>
+                                        <td><span class="badge badge-warning">Good</span></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-title">Payment Instrument Breakdown</div>
+                    <div class="summary-stats">
+                        <div class="stat-item">
+                            <div class="stat-value">₹23.5L</div>
+                            <div class="stat-label">Credit Card Revenue</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value">₹14.2L</div>
+                            <div class="stat-label">Debit Card Revenue</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value">₹6.8L</div>
+                            <div class="stat-label">UPI Revenue</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value">₹1.3L</div>
+                            <div class="stat-label">Wallet Revenue</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Performance Tab -->
+            <div class="tab-content" id="performance">
+                <div class="grid grid-2">
+                    <div class="card">
+                        <div class="card-title">Success vs Failure Rate</div>
+                        <div class="chart-container">
+                            <canvas id="successFailureChart"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-title">Product Category Performance</div>
+                        <div class="table-responsive">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Category</th>
+                                        <th>Transactions</th>
+                                        <th>Avg Value</th>
+                                        <th>Growth</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>Healthcare Supplies</td>
+                                        <td>1,245</td>
+                                        <td>₹2,150</td>
+                                        <td><span class="badge badge-success">+18%</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td>Medicines & Pharma</td>
+                                        <td>856</td>
+                                        <td>₹1,850</td>
+                                        <td><span class="badge badge-success">+15%</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td>Medical Devices</td>
+                                        <td>512</td>
+                                        <td>₹3,200</td>
+                                        <td><span class="badge badge-success">+22%</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td>Wellness Products</td>
+                                        <td>232</td>
+                                        <td>₹1,200</td>
+                                        <td><span class="badge badge-warning">+5%</span></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-title">Customer Retention & Growth</div>
+                    <div class="grid grid-2">
+                        <div class="chart-container">
+                            <canvas id="retentionChart"></canvas>
+                        </div>
+                        <div class="table-responsive">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Segment</th>
+                                        <th>Count</th>
+                                        <th>Avg Orders</th>
+                                        <th>LTV</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>Repeat Customers</td>
+                                        <td>4,200</td>
+                                        <td>5.3</td>
+                                        <td><span class="badge badge-success">₹12,850</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td>New Customers</td>
+                                        <td>2,150</td>
+                                        <td>1.2</td>
+                                        <td><span class="badge badge-warning">₹1,950</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td>At Risk</td>
+                                        <td>385</td>
+                                        <td>0.5</td>
+                                        <td><span class="badge badge-danger">₹420</span></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Competition Tab -->
+            <div class="tab-content" id="competition">
+                <div class="grid">
+                    <div class="card">
+                        <div class="card-title">Market Share Analysis</div>
+                        <div class="chart-container">
+                            <canvas id="marketShareChart"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-title">Competitive Benchmarking</div>
+                        <div class="table-responsive">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Metric</th>
+                                        <th>You</th>
+                                        <th>Comp A</th>
+                                        <th>Comp B</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>Avg Txn Value</td>
+                                        <td><span class="badge badge-success">₹1,612</span></td>
+                                        <td>₹1,480</td>
+                                        <td>₹1,750</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Success Rate</td>
+                                        <td><span class="badge badge-success">98.5%</span></td>
+                                        <td>97.2%</td>
+                                        <td>99.1%</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Avg Processing</td>
+                                        <td><span class="badge badge-success">1.4s</span></td>
+                                        <td>1.8s</td>
+                                        <td>1.2s</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Retention</td>
+                                        <td><span class="badge badge-warning">65.3%</span></td>
+                                        <td>58.2%</td>
+                                        <td>72.5%</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-title">Pricing Comparison</div>
+                    <div class="summary-stats">
+                        <div class="stat-item">
+                            <div class="stat-value">1.8%</div>
+                            <div class="stat-label">Your MDR</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value">2.2%</div>
+                            <div class="stat-label">Competitor Avg</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value">₹5,200</div>
+                            <div class="stat-label">Your Charges</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value">₹6,800</div>
+                            <div class="stat-label">Competitor Avg</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Behavior Analysis Tab -->
+            <div class="tab-content" id="behavior">
+                <div class="grid grid-2">
+                    <div class="card">
+                        <div class="card-title">Transaction Time Distribution</div>
+                        <div class="chart-container">
+                            <canvas id="timeDistributionChart"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-title">Seasonal Patterns</div>
+                        <div class="chart-container">
+                            <canvas id="seasonalChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-title">Customer Behavior Insights</div>
+                    <div class="table-responsive">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Behavior Metric</th>
+                                    <th>Value</th>
+                                    <th>Sentiment</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Peak Transaction Time</td>
+                                    <td>2:00 PM - 4:00 PM</td>
+                                    <td><span class="badge badge-info">Tracked</span></td>
+                                    <td>Optimize server capacity</td>
+                                </tr>
+                                <tr>
+                                    <td>Avg Repeat Purchase Cycle</td>
+                                    <td>28 days</td>
+                                    <td><span class="badge badge-success">Healthy</span></td>
+                                    <td>Plan promotions</td>
+                                </tr>
+                                <tr>
+                                    <td>Cart Abandonment Rate</td>
+                                    <td>12.3%</td>
+                                    <td><span class="badge badge-warning">Moderate</span></td>
+                                    <td>Implement recovery emails</td>
+                                </tr>
+                                <tr>
+                                    <td>Payment Failure Sentiment</td>
+                                    <td>2.1% negative feedback</td>
+                                    <td><span class="badge badge-danger">Negative</span></td>
+                                    <td>Improve error messages</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Security Tab -->
+            <div class="tab-content" id="security">
+                <div class="grid">
+                    <div class="card">
+                        <div class="card-header">
+                            <div>
+                                <div class="card-title">Fraud Detection Rate</div>
+                                <div class="metric">99.8%</div>
+                                <div class="metric-subtext">Prevented fraudulent transactions</div>
+                            </div>
+                            <div class="card-icon" style="background: rgba(16, 185, 129, 0.2); color: var(--success);">🛡️</div>
+                        </div>
+                        <div class="trend positive">↑ 0.5% improvement</div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <div>
+                                <div class="card-title">Chargeback Rate</div>
+                                <div class="metric">0.02%</div>
+                                <div class="metric-subtext">Of total transactions</div>
+                            </div>
+                            <div class="card-icon" style="background: rgba(16, 185, 129, 0.2); color: var(--success);">✓</div>
+                        </div>
+                        <div class="trend positive">↓ Well below industry avg</div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <div>
+                                <div class="card-title">Compliance Status</div>
+                                <div class="metric">100%</div>
+                                <div class="metric-subtext">PCI-DSS Compliant</div>
+                            </div>
+                            <div class="card-icon" style="background: rgba(99, 102, 241, 0.2); color: var(--primary);">📋</div>
+                        </div>
+                        <div class="trend positive">✓ Verified</div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-title">Advanced Fraud Prevention Metrics</div>
+                    <div class="table-responsive">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Fraud Type</th>
+                                    <th>Attempts Blocked</th>
+                                    <th>Detection Rate</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Card Testing</td>
+                                    <td>145</td>
+                                    <td>99.8%</td>
+                                    <td><span class="badge badge-success">Excellent</span></td>
+                                </tr>
+                                <tr>
+                                    <td>Duplicate Transactions</td>
+                                    <td>78</td>
+                                    <td>100%</td>
+                                    <td><span class="badge badge-success">Excellent</span></td>
+                                </tr>
+                                <tr>
+                                    <td>Velocity Fraud</td>
+                                    <td>234</td>
+                                    <td>98.5%</td>
+                                    <td><span class="badge badge-success">Excellent</span></td>
+                                </tr>
+                                <tr>
+                                    <td>Geographic Anomalies</td>
+                                    <td>89</td>
+                                    <td>97.2%</td>
+                                    <td><span class="badge badge-warning">Good</span></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-title">Data Security & Compliance</div>
+                    <div class="summary-stats">
+                        <div class="stat-item">
+                            <div class="stat-value">✓</div>
+                            <div class="stat-label">PCI-DSS Level 1</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value">✓</div>
+                            <div class="stat-label">ISO 27001</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value">✓</div>
+                            <div class="stat-label">3D Secure Enabled</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value">✓</div>
+                            <div class="stat-label">GDPR Compliant</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Operational Tab -->
+            <div class="tab-content" id="operational">
+                <div class="grid grid-2">
+                    <div class="card">
+                        <div class="card-header">
+                            <div>
+                                <div class="card-title">API Uptime</div>
+                                <div class="metric">99.98%</div>
+                                <div class="metric-subtext">Monthly availability</div>
+                            </div>
+                            <div class="card-icon" style="background: rgba(16, 185, 129, 0.2); color: var(--success);">⚙️</div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <div>
+                                <div class="card-title">Avg Response Time</div>
+                                <div class="metric">1.4s</div>
+                                <div class="metric-subtext">API processing time</div>
+                            </div>
+                            <div class="card-icon" style="background: rgba(99, 102, 241, 0.2); color: var(--primary);">⚡</div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <div>
+                                <div class="card-title">Settlement Status</div>
+                                <div class="metric">T+1</div>
+                                <div class="metric-subtext">Next day settlement</div>
+                            </div>
+                            <div class="card-icon" style="background: rgba(16, 185, 129, 0.2); color: var(--success);">💸</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-title">Integration & Support</div>
+                    <div class="table-responsive">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Service</th>
+                                    <th>Status</th>
+                                    <th>Support Level</th>
+                                    <th>Response Time</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Payment Gateway API</td>
+                                    <td><span class="badge badge-success">Active</span></td>
+                                    <td>24/7 Premium</td>
+                                    <td>15 minutes</td>
+                                </tr>
+                                <tr>
+                                    <td>Reporting APIs</td>
+                                    <td><span class="badge badge-success">Active</span></td>
+                                    <td>24/7 Premium</td>
+                                    <td>15 minutes</td>
+                                </tr>
+                                <tr>
+                                    <td>Settlement Module</td>
+                                    <td><span class="badge badge-success">Active</span></td>
+                                    <td>Business Hours</td>
+                                    <td>1 hour</td>
+                                </tr>
+                                <tr>
+                                    <td>Refund Processing</td>
+                                    <td><span class="badge badge-success">Active</span></td>
+                                    <td>24/7 Standard</td>
+                                    <td>4 hours</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-title">Refunds & Returns Management</div>
+                    <div class="summary-stats">
+                        <div class="stat-item">
+                            <div class="stat-value">125</div>
+                            <div class="stat-label">Refunds Processed</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value">₹8.5L</div>
+                            <div class="stat-label">Refund Amount</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value">4.4%</div>
+                            <div class="stat-label">Refund Rate</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value">2.1 days</div>
+                            <div class="stat-label">Avg Processing Time</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Strategic Tab -->
+            <div class="tab-content" id="strategic">
+                <div class="grid grid-2">
+                    <div class="card">
+                        <div class="card-title">Payment Ecosystem Trends</div>
+                        <div class="chart-container">
+                            <canvas id="ecosystemChart"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-title">Emerging Technologies Adoption</div>
+                        <div class="table-responsive">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Technology</th>
+                                        <th>Status</th>
+                                        <th>Adoption %</th>
+                                        <th>Growth</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>Buy Now Pay Later</td>
+                                        <td><span class="badge badge-warning">Piloting</span></td>
+                                        <td>2.5%</td>
+                                        <td><span class="badge badge-success">+450%</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td>Digital Wallets</td>
+                                        <td><span class="badge badge-success">Active</span></td>
+                                        <td>8.1%</td>
+                                        <td><span class="badge badge-success">+35%</span></td>
+                                    </tr>                                
+                                    <tr>
+                                        <td>Voice Payments</td>
+                                        <td><span class="badge badge-info">Research</span></td>
+                                        <td>0%</td>
+                                        <td>Pending</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-title">Cross-Selling & Upselling Opportunities</div>
+                    <div class="table-responsive">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Opportunity</th>
+                                    <th>Target Segment</th>
+                                    <th>Potential Revenue</th>
+                                    <th>Priority</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Subscription Payments</td>
+                                    <td>Repeat Customers (65%)</td>
+                                    <td>₹15L - ₹25L annually</td>
+                                    <td><span class="badge badge-success">High</span></td>
+                                </tr>
+                                <tr>
+                                    <td>Buy Now Pay Later</td>
+                                    <td>Medium Order Value (₹1.5K - ₹4K)</td>
+                                    <td>₹8L - ₹12L annually</td>
+                                    <td><span class="badge badge-success">High</span></td>
+                                </tr>
+                                <tr>
+                                    <td>Loyalty Programs</td>
+                                    <td>All Customers</td>
+                                    <td>₹5L - ₹8L annually</td>
+                                    <td><span class="badge badge-warning">Medium</span></td>
+                                    </tr>
+                                <tr>
+                                    <td>Corporate Payment Solutions</td>
+                                    <td>B2B Segment</td>
+                                    <td>₹10L - ₹20L annually</td>
+                                    <td><span class="badge badge-warning">Medium</span></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-title">12-Month Forecast & Recommendations</div>
+                    <div class="summary-stats">
+                        <div class="stat-item">
+                            <div class="stat-value">₹68.5L</div>
+                            <div class="stat-label">Projected Revenue (12M)</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value">+49%</div>
+                            <div class="stat-label">YoY Growth</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value">4,250</div>
+                            <div class="stat-label">Projected Customers</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value">₹1,610</div>
+                            <div class="stat-label">Projected Avg Order Value</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Chatbot Panel -->
+        <div class="chatbot-panel">
+            <!-- Chat Header -->
+            <div class="chatbot-header">
+                <h3>Indriya</h3>
+                <p>Your AI Payment Analytics Assistant</p>
+            </div>
+
+            <!-- Messages -->
+            <div class="chat-messages" id="chatMessages">
+                <div class="message bot-message">
+                    <div class="msg-content">
+                        Hi! I'm Indriya, your AI-powered payment analytics assistant. I can help you understand transaction trends, optimize payment flows, and grow your business. What would you like to know?
+                    </div>
+                </div>
+            </div>
+
+            <!-- Category Tabs -->
+            <div class="category-tabs">
+                <button class="category-tab active" data-category="overview">Overview</button>
+                <button class="category-tab" data-category="performance">Performance</button>
+                <button class="category-tab" data-category="competition">Competition</button>
+                <button class="category-tab" data-category="behavior">Behavior</button>
+                <button class="category-tab" data-category="security">Security</button>
+            </div>
+
+            <!-- Questions -->
+            <div class="questions-section" id="questionsContainer">
+                <div class="questions-title">Suggested Questions</div>
+                <!-- Questions will be dynamically populated -->
+            </div>
+
+            <!-- Chat Input -->
+            <div class="chat-input">
+                <input type="text" id="userInput" placeholder="Ask me anything...">
+                <button id="sendBtn" title="Send message">➤</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ============================================
+        // THEME & SETTINGS MANAGEMENT
+        // ============================================
+
+        const themeToggle = document.getElementById('themeToggle');
+        const settingsToggle = document.getElementById('settingsToggle');
+        const settingsModal = document.getElementById('settingsModal');
+        const settingsClose = document.getElementById('settingsClose');
+
+        // Load saved preferences
+        function loadPreferences() {
+            const savedTheme = localStorage.getItem('selectedTheme') || 'default';
+            const savedDarkMode = localStorage.getItem('darkMode') === 'true';
+
+            applyTheme(savedTheme);
+            if (savedDarkMode) {
+                document.body.classList.add('dark-mode');
+                themeToggle.textContent = '☀️';
+                document.getElementById('darkModeToggle').checked = true;
+            }
+        }
+
+        // Apply Theme
+        function applyTheme(theme) {
+            // Remove all theme classes
+            document.body.classList.remove('theme-ocean', 'theme-forest', 'theme-rose', 'theme-amber', 'theme-purple');
+            
+            if (theme !== 'default') {
+                document.body.classList.add(`theme-${theme}`);
+            }
+
+            // Update active color button
+            document.querySelectorAll('.color-option').forEach(opt => {
+                opt.classList.remove('active');
+            });
+            document.querySelector(`[data-theme="${theme}"]`).classList.add('active');
+
+            localStorage.setItem('selectedTheme', theme);
+        }
+
+        // Settings Modal
+        settingsToggle.addEventListener('click', () => {
+            settingsModal.classList.add('active');
+        });
+
+        settingsClose.addEventListener('click', () => {
+            settingsModal.classList.remove('active');
+        });
+
+        settingsModal.addEventListener('click', (e) => {
+            if (e.target === settingsModal) {
+                settingsModal.classList.remove('active');
+            }
+        });
+
+        // Theme Selection
+        document.querySelectorAll('.color-option').forEach(btn => {
+            btn.addEventListener('click', () => {
+                applyTheme(btn.getAttribute('data-theme'));
+            });
+        });
+
+        // Dark Mode Toggle
+        themeToggle.addEventListener('click', () => {
+            document.body.classList.toggle('dark-mode');
+            const isDark = document.body.classList.contains('dark-mode');
+            themeToggle.textContent = isDark ? '☀️' : '🌙';
+            document.getElementById('darkModeToggle').checked = isDark;
+            localStorage.setItem('darkMode', isDark);
+            updateChartsForTheme();
+        });
+
+        document.getElementById('darkModeToggle').addEventListener('change', (e) => {
+            if (e.target.checked) {
+                document.body.classList.add('dark-mode');
+                themeToggle.textContent = '☀️';
+            } else {
+                document.body.classList.remove('dark-mode');
+                themeToggle.textContent = '🌙';
+            }
+            localStorage.setItem('darkMode', e.target.checked);
+            updateChartsForTheme();
+        });
+
+        // ============================================
+        // VIEW & PERIOD MANAGEMENT
+        // ============================================
+
+        let currentView = 'merchant';
+        let currentPeriod = 'today';
+
+        document.getElementById('viewToggle').addEventListener('click', function() {
+            currentView = 'merchant';
+            document.getElementById('viewToggle').classList.add('active');
+            document.getElementById('salesToggle').classList.remove('active');
+            updateDashboardData();
+        });
+
+        document.getElementById('salesToggle').addEventListener('click', function() {
+            currentView = 'sales';
+            document.getElementById('salesToggle').classList.add('active');
+            document.getElementById('viewToggle').classList.remove('active');
+            updateDashboardData();
+        });
+
+        document.getElementById('periodToday').addEventListener('click', function() {
+            currentPeriod = 'today';
+            document.getElementById('periodToday').classList.add('active');
+            document.getElementById('periodOverall').classList.remove('active');
+            updateDashboardData();
+        });
+
+        document.getElementById('periodOverall').addEventListener('click', function() {
+            currentPeriod = 'overall';
+            document.getElementById('periodOverall').classList.add('active');
+            document.getElementById('periodToday').classList.remove('active');
+            updateDashboardData();
+        });
+
+        // Data Sets
+        const todayData = {
+            merchant: {
+                totalTxn: '485',
+                totalRevenue: '₹8.45L',
+                avgValue: '₹1,742',
+                successRate: '98.8%'
+            },
+            sales: {
+                totalTxn: '645',
+                totalRevenue: '₹11.2L',
+                avgValue: '₹1,736',
+                successRate: '98.5%'
+            }
+        };
+
+        const overallData = {
+            merchant: {
+                totalTxn: '2,845',
+                totalRevenue: '₹45.82L',
+                avgValue: '₹1,612',
+                successRate: '98.5%'
+            },
+            sales: {
+                totalTxn: '3,845',
+                totalRevenue: '₹62.5L',
+                avgValue: '₹1,625',
+                successRate: '98.3%'
+            }
+        };
+
+        function updateDashboardData() {
+            const data = currentPeriod === 'today' ? todayData[currentView] : overallData[currentView];
+            document.getElementById('totalTxn').textContent = data.totalTxn;
+            document.getElementById('totalRevenue').textContent = data.totalRevenue;
+            document.getElementById('avgValue').textContent = data.avgValue;
+            document.getElementById('successRate').textContent = data.successRate;
+        }
+
+        // ============================================
+        // TAB NAVIGATION
+        // ============================================
+
+        const tabs = document.querySelectorAll('.tab');
+        const tabContents = document.querySelectorAll('.tab-content');
+
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                tabs.forEach(t => t.classList.remove('active'));
+                tabContents.forEach(content => content.classList.remove('active'));
+                
+                tab.classList.add('active');
+                const tabId = tab.getAttribute('data-tab');
+                document.getElementById(tabId).classList.add('active');
+                
+                setTimeout(() => {
+                    Object.values(charts).forEach(chart => {
+                        if (chart) chart.resize();
+                    });
+                }, 100);
+            });
+        });
+
+        // ============================================
+        // CHARTS MANAGEMENT
+        // ============================================
+
+        const charts = {};
+
+        const chartConfig = {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    labels: {
+                        color: getComputedStyle(document.body).color,
+                        font: {
+                            size: 12
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    ticks: {
+                        color: getComputedStyle(document.body).color,
+                        font: {
+                            size: 11
+                        }
+                    },
+                    grid: {
+                        color: 'rgba(200, 200, 200, 0.1)'
+                    }
+                },
+                x: {
+                    ticks: {
+                        color: getComputedStyle(document.body).color,
+                        font: {
+                            size: 11
+                        }
+                    },
+                    grid: {
+                        color: 'rgba(200, 200, 200, 0.1)'
+                    }
+                }
+            }
+        };
+
+        function initCharts() {
+            const primaryColor = getComputedStyle(document.documentElement).getPropertyValue('--primary').trim();
+            const secondaryColor = getComputedStyle(document.documentElement).getPropertyValue('--secondary').trim();
+
+            // Payment Mode Distribution Chart
+            const paymentModeCtx = document.getElementById('paymentModeChart');
+            if (paymentModeCtx && !charts.paymentMode) {
+                charts.paymentMode = new Chart(paymentModeCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Credit Card', 'Debit Card', 'UPI', 'Wallets'],
+                        datasets: [{
+                            data: [43.8, 30.1, 18.0, 8.1],
+                            backgroundColor: [
+                                'rgba(99, 102, 241, 0.8)',
+                                'rgba(139, 92, 246, 0.8)',
+                                'rgba(16, 185, 129, 0.8)',
+                                'rgba(245, 158, 11, 0.8)'
+                            ],
+                            borderColor: getComputedStyle(document.body).backgroundColor,
+                            borderWidth: 2
+                        }]
+                    },
+                    options: {
+                        ...chartConfig,
+                        plugins: {
+                            ...chartConfig.plugins,
+                            legend: {
+                                position: 'bottom',
+                                labels: {
+                                    color: getComputedStyle(document.body).color,
+                                    padding: 15
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Instrument Chart
+            const instrumentCtx = document.getElementById('instrumentChart');
+            if (instrumentCtx && !charts.instrument) {
+                charts.instrument = new Chart(instrumentCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: ['Credit Card', 'Debit Card', 'UPI', 'Wallets'],
+                        datasets: [{
+                            label: 'Revenue (₹ Lakhs)',
+                            data: [23.5, 14.2, 6.8, 1.3],
+                            backgroundColor: [
+                                'rgba(99, 102, 241, 0.7)',
+                                'rgba(139, 92, 246, 0.7)',
+                                'rgba(16, 185, 129, 0.7)',
+                                'rgba(245, 158, 11, 0.7)'
+                            ],
+                            borderRadius: 8,
+                            borderSkipped: false
+                        }]
+                    },
+                    options: {
+                        ...chartConfig,
+                        indexAxis: 'y',
+                        plugins: {
+                            legend: {
+                                display: false
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Trend Chart
+            const trendCtx = document.getElementById('trendChart');
+            if (trendCtx && !charts.trend) {
+                charts.trend = new Chart(trendCtx, {
+                    type: 'line',
+                    data: {
+                        labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+                        datasets: [
+                            {
+                                label: 'Transactions',
+                                data: [450, 520, 485, 625, 580, 720, 680],
+                                borderColor: 'rgba(99, 102, 241, 1)',
+                                backgroundColor: 'rgba(99, 102, 241, 0.1)',
+                                tension: 0.4,
+                                fill: true,
+                                pointRadius: 5,
+                                pointBackgroundColor: 'rgba(99, 102, 241, 1)'
+                            }
+                        ]
+                    },
+                    options: chartConfig
+                });
+            }
+
+            // Success/Failure Chart
+            const successCtx = document.getElementById('successFailureChart');
+            if (successCtx && !charts.success) {
+                charts.success = new Chart(successCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Successful', 'Failed', 'Pending'],
+                        datasets: [{
+                            data: [98.5, 1.2, 0.3],
+                            backgroundColor: ['rgba(16, 185, 129, 0.8)', 'rgba(239, 68, 68, 0.8)', 'rgba(245, 158, 11, 0.8)'],
+                            borderColor: getComputedStyle(document.body).backgroundColor,
+                            borderWidth: 2
+                        }]
+                    },
+                    options: {
+                        ...chartConfig,
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                                labels: {
+                                    color: getComputedStyle(document.body).color
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Retention Chart
+            const retentionCtx = document.getElementById('retentionChart');
+            if (retentionCtx && !charts.retention) {
+                charts.retention = new Chart(retentionCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: ['Repeat', 'New', 'At Risk'],
+                        datasets: [{
+                            label: 'Customer Count',
+                            data: [4200, 2150, 385],
+                            backgroundColor: ['rgba(16, 185, 129, 0.7)', 'rgba(99, 102, 241, 0.7)', 'rgba(239, 68, 68, 0.7)'],
+                            borderRadius: 8
+                        }]
+                    },
+                    options: chartConfig
+                });
+            }
+
+            // Market Share Chart
+            const marketCtx = document.getElementById('marketShareChart');
+            if (marketCtx && !charts.market) {
+                charts.market = new Chart(marketCtx, {
+                    type: 'radar',
+                    data: {
+                        labels: ['Transaction Volume', 'Revenue', 'Customer Base', 'Success Rate', 'Speed'],
+                        datasets: [
+                            {
+                                label: 'HealthMart',
+                                data: [85, 80, 75, 98.5, 86],
+                                borderColor: 'rgba(99, 102, 241, 1)',
+                                backgroundColor: 'rgba(99, 102, 241, 0.2)',
+                                fill: true
+                            },
+                            {
+                                label: 'Competitor Avg',
+                                data: [75, 78, 82, 97, 80],
+                                borderColor: 'rgba(245, 158, 11, 1)',
+                                backgroundColor: 'rgba(245, 158, 11, 0.1)',
+                                fill: true
+                            }
+                        ]
+                    },
+                    options: chartConfig
+                });
+            }
+
+            // Time Distribution Chart
+            const timeCtx = document.getElementById('timeDistributionChart');
+            if (timeCtx && !charts.time) {
+                charts.time = new Chart(timeCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: ['12AM-4AM', '4AM-8AM', '8AM-12PM', '12PM-4PM', '4PM-8PM', '8PM-12AM'],
+                        datasets: [{
+                            label: 'Transactions',
+                            data: [120, 150, 380, 520, 450, 245],
+                            backgroundColor: ['rgba(99, 102, 241, 0.7)', 'rgba(139, 92, 246, 0.7)', 'rgba(99, 102, 241, 0.7)', 'rgba(99, 102, 241, 0.7)', 'rgba(99, 102, 241, 0.7)', 'rgba(139, 92, 246, 0.7)'],
+                            borderRadius: 8
+                        }]
+                    },
+                    options: chartConfig
+                });
+            }
+
+            // Seasonal Chart
+            const seasonalCtx = document.getElementById('seasonalChart');
+            if (seasonalCtx && !charts.seasonal) {
+                charts.seasonal = new Chart(seasonalCtx, {
+                    type: 'line',
+                    data: {
+                        labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+                        datasets: [
+                            {
+                                label: 'Revenue',
+                                data: [32, 35, 38, 42, 48, 52, 58, 55, 62, 68, 72, 75],
+                                borderColor: 'rgba(16, 185, 129, 1)',
+                                backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                                tension: 0.4,
+                                fill: true
+                            }
+                        ]
+                    },
+                    options: chartConfig
+                });
+            }
+
+            // Ecosystem Chart
+            const ecosystemCtx = document.getElementById('ecosystemChart');
+            if (ecosystemCtx && !charts.ecosystem) {
+                charts.ecosystem = new Chart(ecosystemCtx, {
+                    type: 'line',
+                    data: {
+                        labels: ['Q1', 'Q2', 'Q3', 'Q4'],
+                        datasets: [
+                            {
+                                label: 'Digital Wallets',
+                                data: [5.2, 6.1, 7.4, 8.1],
+                                borderColor: 'rgba(99, 102, 241, 1)',
+                                backgroundColor: 'rgba(99, 102, 241, 0.1)',
+                                tension: 0.4,
+                                fill: true
+                            },
+                            {
+                                label: 'UPI',
+                                data: [12.5, 14.2, 16.8, 18.0],
+                                borderColor: 'rgba(16, 185, 129, 1)',
+                                backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                                tension: 0.4,
+                                fill: true
+                            },
+                            {
+                                label: 'Cards',
+                                data: [75.2, 74.5, 73.2, 71.8],
+                                borderColor: 'rgba(139, 92, 246, 1)',
+                                backgroundColor: 'rgba(139, 92, 246, 0.1)',
+                                tension: 0.4,
+                                fill: true
+                            }
+                        ]
+                    },
+                    options: chartConfig
+                });
+            }
+        }
+
+        function updateChartsForTheme() {
+            setTimeout(() => {
+                Object.values(charts).forEach(chart => {
+                    if (chart) {
+                        const textColor = getComputedStyle(document.body).color;
+                        
+                        if (chart.options.plugins && chart.options.plugins.legend) {
+                            chart.options.plugins.legend.labels.color = textColor;
+                        }
+                        
+                        if (chart.options.scales) {
+                            if (chart.options.scales.x) {
+                                chart.options.scales.x.ticks.color = textColor;
+                            }
+                            if (chart.options.scales.y) {
+                                chart.options.scales.y.ticks.color = textColor;
+                            }
+                        }
+                        
+                        chart.update();
+                    }
+                });
+            }, 50);
+        }
+
+        // ============================================
+        // CHATBOT FUNCTIONALITY
+        // ============================================
+
+        const questionDatabase = {
+            overview: [
+                'What was my total transaction volume today?',
+                'Show me revenue breakdown by payment method',
+                'What is my success rate for transactions?',
+                'How do customers prefer to pay?'
+            ],
+            performance: [
+                'What is my peak transaction time?',
+                'How does my performance compare to competitors?',
+                'What are the slowest payment methods?',
+                'Show me order value trends'
+            ],
+            competition: [
+                'How am I positioned against competitors?',
+                'What is the market share distribution?',
+                'Compare pricing with competitors',
+                'What payment methods do competitors offer?'
+            ],
+            behavior: [
+                'What is customer repeat purchase rate?',
+                'When do most customers buy?',
+                'What is cart abandonment rate?',
+                'Which product categories perform best?'
+            ],
+            security: [
+                'What is my fraud detection rate?',
+                'Show me chargeback statistics',
+                'What security certifications do I have?',
+                'Are there any compliance issues?'
+            ]
+        };
+
+        function updateQuestions(category) {
+            const container = document.getElementById('questionsContainer');
+            const questions = questionDatabase[category] || questionDatabase.overview;
+            
+            let html = '<div class="questions-title">Suggested Questions</div>';
+            questions.forEach(q => {
+                html += `<button class="question-btn" onclick="askQuestion('${q}')">${q}</button>`;
+            });
+            container.innerHTML = html;
+        }
+
+        const categoryTabs = document.querySelectorAll('.category-tab');
+        categoryTabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                categoryTabs.forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                updateQuestions(tab.getAttribute('data-category'));
+            });
+        });
+
+        const chatMessages = document.getElementById('chatMessages');
+        const userInput = document.getElementById('userInput');
+        const sendBtn = document.getElementById('sendBtn');
+
+        function addMessage(text, isUser = false) {
+            const message = document.createElement('div');
+            message.className = `message ${isUser ? 'user-message' : 'bot-message'}`;
+            message.innerHTML = `<div class="msg-content">${text}</div>`;
+            chatMessages.appendChild(message);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        function getBotResponse(userQuestion) {
+            const responses = {
+                'total transaction': 'Your total transaction volume is currently 2,845 transactions with a success rate of 98.5%. Credit cards account for 43.8% of transactions.',
+                'revenue': 'Your total revenue is ₹45.82L from all payment methods. Credit cards contribute ₹23.5L (51.3%), followed by debit cards at ₹14.2L (31%).',
+                'success rate': 'Your current success rate is 98.5%, which is excellent and above industry average of 97.2%.',
+                'payment method': 'Your most popular payment method is Credit Cards (43.8%), followed by Debit Cards (30.1%) and UPI (18%). Consider promoting digital wallets for younger demographics.',
+                'fraud': 'Your fraud detection rate is 99.8% with only 0.02% chargeback rate, well below industry standards.',
+                'competitor': 'Compared to competitors, you have better success rates (98.5% vs 97.2%) but similar average transaction values (₹1,612 vs ₹1,480).',
+                'customer': 'You have 4,200 repeat customers with an average lifetime value of ₹12,850. New customers average 1.2 transactions.',
+                'peak': 'Your peak transaction time is 2:00 PM - 4:00 PM with 520 average transactions during this window.',
+                'default': 'Based on your dashboard data, I can help you with transaction analytics, payment performance, competitor analysis, customer behavior, security metrics, and strategic recommendations. What specific area interests you?'
+            };
+
+            const lowerQuestion = userQuestion.toLowerCase();
+            for (const [key, response] of Object.entries(responses)) {
+                if (lowerQuestion.includes(key)) {
+                    return response;
+                }
+            }
+            return responses.default;
+        }
+
+        function askQuestion(question) {
+            userInput.value = question;
+            sendMessage();
+        }
+
+        function sendMessage() {
+            const message = userInput.value.trim();
+            if (!message) return;
+
+            addMessage(message, true);
+            userInput.value = '';
+
+            const typingDiv = document.createElement('div');
+            typingDiv.className = 'message bot-message';
+            typingDiv.innerHTML = '<div class="msg-content"><span class="loading"></span><span class="loading"></span><span class="loading"></span></div>';
+            chatMessages.appendChild(typingDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+
+            setTimeout(() => {
+                typingDiv.remove();
+                const response = getBotResponse(message);
+                addMessage(response, false);
+            }, 1000);
+        }
+
+        sendBtn.addEventListener('click', sendMessage);
+        userInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') sendMessage();
+        });
+
+        // ============================================
+        // INITIALIZATION
+        // ============================================
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadPreferences();
+            initCharts();
+            updateQuestions('overview');
+            updateDashboardData();
+        });
+    </script>
 </body>
 </html>
